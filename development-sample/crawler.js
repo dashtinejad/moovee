@@ -41,11 +41,14 @@ db.findOne({ _id: 'tt1345836' }, (err, movie) => {
 
                 const date = $('meta[itemprop="datePublished"]').attr('content')
 
+                const poster = $('.poster img').attr('src')
+
                 console.log(title)
                 console.log(year)
                 console.log(duration)
                 console.log(genres)
                 console.log(date)
+                console.log(poster)
 
             }
             done();
