@@ -1,4 +1,6 @@
 import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron';
+
+var base64 = require('node-base64-image');
 var Crawler = require("crawler")
 var c = new Crawler();
 
@@ -308,16 +310,11 @@ ipcMain.on('crawl-movie', (event, request) => {
 
                 const date = $('meta[itemprop="datePublished"]').attr('content')
 
-                const poster = $('.poster img').attr('src')
+                const posterUrl = $('.poster img').attr('src')
 
-                console.log(title)
-                console.log(year)
-                console.log(duration)
-                console.log(genres)
-                console.log(date)
-                console.log(poster)
+                let poster = ''
 
-                const movie = {
+                let movie = {
                   title,
                   year,
                   duration,
@@ -327,6 +324,23 @@ ipcMain.on('crawl-movie', (event, request) => {
                 }
 
                 event.sender.send('movie-fetched', movie)
+
+                base64.encode(posterUrl, { 'string': true }, (err, response) => {
+                    poster = response
+
+                    movie = {
+                      title,
+                      year,
+                      duration,
+                      date,
+                      poster,
+                      genres
+                    }
+
+                    event.sender.send('movie-fetched', movie)
+                })
+
+                
 
             }
             done();

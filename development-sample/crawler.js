@@ -1,6 +1,9 @@
+var base64 = require('node-base64-image');
 var Datastore = require('nedb')
 var Crawler = require("crawler")
 var url = require('url')
+
+
 
 
 var db = new Datastore({
@@ -41,14 +44,20 @@ db.findOne({ _id: 'tt1345836' }, (err, movie) => {
 
                 const date = $('meta[itemprop="datePublished"]').attr('content')
 
-                const poster = $('.poster img').attr('src')
+                const posterUrl = $('.poster img').attr('src')
+
+                console.log(posterUrl);
+
+                base64.encode(posterUrl, { 'string': true }, (err, response) => {
+                    console.log(response)
+                })
 
                 console.log(title)
                 console.log(year)
                 console.log(duration)
                 console.log(genres)
                 console.log(date)
-                console.log(poster)
+                // console.log(poster)
 
             }
             done();
