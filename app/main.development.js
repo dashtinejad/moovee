@@ -1,4 +1,6 @@
 import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron';
+var Crawler = require("crawler")
+var c = new Crawler();
 
 let menu;
 let template;
@@ -274,17 +276,60 @@ app.on('ready', async () => {
 });
 
 
-let settingsWindow = null;
+ipcMain.on('crawl-movie', (event, request) => {
+  console.log(request)  // prints "ping"
 
-ipcMain.on('asynchronous-message', (event, arg) => {
-  console.log(arg)  // prints "ping"
+  event.sender.send('movie-loader')
 
-  event.sender.send('asynchronous-reply', 'pong')
+  c.queue({
+        uri: `http://www.imdb.com/title/${request}/`,
 
-  settingsWindow = new BrowserWindow({
-      height: 768,
-      width: 1024
-  });
+        // The global callback won't be called
+        callback: function (error, res, done) {
+            if(error){
+                console.log(error);
+            }else{
+                var $ = res.$;
+                const title = $('h1[itemprop="name"]')
+                    .clone()
+                    .find('#titleYear')
+                        .remove()
+                        .end()
+                    .text()
+                
+                const year = $('#titleYear').text().slice(1, -1)
 
-  settingsWindow.loadURL(`file://${__dirname}/app.html`);
+                const duration = $('[itemprop="duration"]').attr('datetime')
+
+                const genres = []
+                $('.subtext [itemprop="genre"]').each((index, item) => {
+                    genres.push($(item).text())
+                })
+
+                const date = $('meta[itemprop="datePublished"]').attr('content')
+
+                const poster = $('.poster img').attr('src')
+
+                console.log(title)
+                console.log(year)
+                console.log(duration)
+                console.log(genres)
+                console.log(date)
+                console.log(poster)
+
+                const movie = {
+                  title,
+                  year,
+                  duration,
+                  date,
+                  poster,
+                  genres
+                }
+
+                event.sender.send('movie-fetched', movie)
+
+            }
+            done();
+        }
+    });
 })
