@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, shell } from 'electron';
+import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron';
 
 let menu;
 let template;
@@ -272,3 +272,19 @@ app.on('ready', async () => {
     mainWindow.setMenu(menu);
   }
 });
+
+
+let settingsWindow = null;
+
+ipcMain.on('asynchronous-message', (event, arg) => {
+  console.log(arg)  // prints "ping"
+
+  event.sender.send('asynchronous-reply', 'pong')
+
+  settingsWindow = new BrowserWindow({
+      height: 768,
+      width: 1024
+  });
+
+  settingsWindow.loadURL(`file://${__dirname}/app.html`);
+})
