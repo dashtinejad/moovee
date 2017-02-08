@@ -1,8 +1,4 @@
-import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron';
-
-var base64 = require('node-base64-image');
-var Crawler = require("crawler")
-var c = new Crawler();
+import { app, BrowserWindow, Menu, shell } from 'electron';
 
 let menu;
 let template;
@@ -33,12 +29,15 @@ const installExtensions = async () => {
       'REACT_DEVELOPER_TOOLS',
       'REDUX_DEVTOOLS'
     ];
+
     const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-    for (const name of extensions) { // eslint-disable-line
-      try {
-        await installer.default(installer[name], forceDownload);
-      } catch (e) {} // eslint-disable-line
-    }
+
+    // TODO: Use async interation statement.
+    //       Waiting on https://github.com/tc39/proposal-async-iteration
+    //       Promises will fail silently, which isn't what we want in development
+    return Promise
+      .all(extensions.map(name => installer.default(installer[name], forceDownload)))
+      .catch(console.log);
   }
 };
 
@@ -276,74 +275,3 @@ app.on('ready', async () => {
     mainWindow.setMenu(menu);
   }
 });
-
-
-ipcMain.on('crawl-movie', (event, request) => {
-  console.log(request)  // prints "ping"
-
-  event.sender.send('movie-loader')
-
-  c.queue({
-        uri: `http://www.imdb.com/title/${request}/`,
-
-        // The global callback won't be called
-        callback: function (error, res, done) {
-            if(error){
-                console.log(error);
-            }else{
-                var $ = res.$;
-                const title = $('h1[itemprop="name"]')
-                    .clone()
-                    .find('#titleYear')
-                        .remove()
-                        .end()
-                    .text()
-                
-                const year = $('#titleYear').text().slice(1, -1)
-
-                const duration = $('[itemprop="duration"]').attr('datetime')
-
-                const genres = []
-                $('.subtext [itemprop="genre"]').each((index, item) => {
-                    genres.push($(item).text())
-                })
-
-                const date = $('meta[itemprop="datePublished"]').attr('content')
-
-                const posterUrl = $('.poster img').attr('src')
-
-                let poster = ''
-
-                let movie = {
-                  title,
-                  year,
-                  duration,
-                  date,
-                  poster,
-                  genres
-                }
-
-                event.sender.send('movie-fetched', movie)
-
-                base64.encode(posterUrl, { 'string': true }, (err, response) => {
-                    poster = response
-
-                    movie = {
-                      title,
-                      year,
-                      duration,
-                      date,
-                      poster,
-                      genres
-                    }
-
-                    event.sender.send('movie-fetched', movie)
-                })
-
-                
-
-            }
-            done();
-        }
-    });
-})
